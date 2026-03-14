@@ -1,132 +1,126 @@
-const gameboard = (() => {
-    let gameboard = [
+const gameBoard = new class {
+    #gameboard = [
         [null, null, null],
         [null, null, null],
         [null, null, null]
     ];
 
-    let winner = null;
+    #winner = null;
 
-    function playTurn(x, y, player) {
-        if (gameboard[x][y] !== null) { return false; }
-        gameboard[x][y] = player;
+    playTurn(x, y, player) {
+        if (this.#gameboard[x][y] !== null) { return false; }
+        this.#gameboard[x][y] = player;
         return true;
     }
 
-    function isOver() {
+    isOver() {
         for (let i = 0 ; i < 3 ; i++) {
-            if (gameboard[i][0] && gameboard[i][0] === gameboard[i][1] && gameboard[i][1] === gameboard[i][2]) { // This checks the lines
-                winner = gameboard[i][0];
+            if (this.#gameboard[i][0] && this.#gameboard[i][0] === this.#gameboard[i][1] && this.#gameboard[i][1] === this.#gameboard[i][2]) { // This checks the lines
+                this.#winner = this.#gameboard[i][0];
                 return true; 
             }
-            if (gameboard[0][i] && gameboard[0][i] === gameboard[1][i] && gameboard[1][i] === gameboard[2][i]) { // This checks the columns
-                winner = gameboard[0][i];
+            if (this.#gameboard[0][i] && this.#gameboard[0][i] === this.#gameboard[1][i] && this.#gameboard[1][i] === this.#gameboard[2][i]) { // This checks the columns
+                this.#winner = this.#gameboard[0][i];
                 return true; 
             }
         }
-        if (gameboard[0][0] && gameboard[0][0] === gameboard[1][1] && gameboard[1][1] === gameboard[2][2]) { // First diagonal
-            winner = gameboard[0][0];
+        if (this.#gameboard[0][0] && this.#gameboard[0][0] === this.#gameboard[1][1] && this.#gameboard[1][1] === this.#gameboard[2][2]) { // First diagonal
+            this.#winner = this.#gameboard[0][0];
             return true; 
         }
-        if (gameboard[0][2] && gameboard[0][2] === gameboard[1][1] && gameboard[1][1] === gameboard[2][0]) { // Second diagonal
-            winner = gameboard[0][2];
+        if (this.#gameboard[0][2] && this.#gameboard[0][2] === this.#gameboard[1][1] && this.#gameboard[1][1] === this.#gameboard[2][0]) { // Second diagonal
+            this.#winner = this.#gameboard[0][2];
             return true; 
         }
 
-        if (!gameboard.some((line) => (
+        if (!this.#gameboard.some((line) => (
             line.some((el) => el === null))
         )) { // If no element in null the game is tied
-            winner = 0;
+            this.#winner = 0;
             return true;
         }
 
         return false;
     }
 
-    function getWinner() {
-        return winner
+    get winner() {
+        return this.#winner
     }
 
-    function getPlayer(x, y) {
-        return gameboard[x][y]
+    getPlayer(x, y) {
+        return this.#gameboard[x][y]
     } 
 
-    function reset() {
-        gameboard = [
+    reset() {
+        this.#gameboard = [
             [null, null, null],
             [null, null, null],
             [null, null, null]
         ];
-        winner = null;
-    }
-
-    return {
-        playTurn,
-        isOver,
-        getWinner,
-        getPlayer,
-        reset
-    }
-})();
-
-function Player(gameboard, index) {
-    if (![1, 2].includes(index)) {
-        throw new RangeError("The player indices can only be 1 or 2");
-    }
-
-    const board = gameboard;
-    const id = index;
-
-    return {
-        
+        this.#winner = null;
     }
 }
 
-const player1 = Player(gameboard, 1);
-const player2 = Player(gameboard, 2);
+class Player {
+    #board;
+    #index;
+    constructor(gameboard, index) {
+        if (![1, 2].includes(index)) {
+            throw new RangeError("The player indices can only be 1 or 2");
+        }
 
-const game = ((player1, player2, gameboard) => {
-    const p1 = player1;
-    const p2 = player2;
-    const board = gameboard;
+        this.#board = gameboard;
+        this.#index = index;
+    } 
+}
 
-    let turn = true;
+const player1 = new Player(gameBoard, 1);
+const player2 = new Player(gameBoard, 2);
 
-    function play(x, y) {
-        const allowed = turn ? board.playTurn(x, y, 1) : board.playTurn(x, y, 2);
-        if (allowed) turn = !turn;
+const game = new class {
+    #p1;
+    #p2;
+    #board;
+    #turn = true;
+
+    constructor(player1, player2, gameboard) {
+        this.#p1 = player1;
+        this.#p2 = player2;
+        this.#board = gameboard;
+    }
+
+    play(x, y) {
+        const allowed = this.#turn ? this.#board.playTurn(x, y, 1) : this.#board.playTurn(x, y, 2);
+        if (allowed) this.#turn = !this.#turn;
         return allowed
     }
 
-    function isOver() {
-        if (!board.isOver()) return false;
+    isOver() {
+        if (!this.#board.isOver()) return false;
         else {
-            return board.getWinner()
+            return this.#board.winner
         }
     }
 
-    function getTurn() { return turn };
+    get turn() { return this.#turn };
 
-    function reset() {
-        turn = true;
-        board.reset();
+    reset() {
+        this.#turn = true;
+        this.#board.reset();
+    }
+}(player1, player2, gameBoard);
+
+const displayController = new class {
+    #board;
+
+    constructor(gameboard) {
+        this.#board = gameboard;
     }
 
-    return {
-        play,
-        isOver,
-        getTurn,
-        reset
-    }
-})(player1, player2, gameboard);
-
-const displayController = ((gameboard) => {
-    const board = gameboard;
-
-    function updateSquare(x, y) {
+    updateSquare(x, y) {
         const id = x + 3*y;
         const button = document.getElementById(id);
-        switch (board.getPlayer(x, y)) {
+        switch (this.#board.getPlayer(x, y)) {
             case 1: 
                 button.textContent = "X";
                 break;
@@ -139,13 +133,13 @@ const displayController = ((gameboard) => {
         };
     }
 
-    function updateName(name, player) {
+    updateName(name, player) {
         document.querySelector('#player' + player + '-name').textContent = name;
         document.querySelector(".win-message.player" + player + " > span").textContent = name === "" ? "You win !" : name + " wins !";
     }
 
-    function updateWinMessage() {
-        const winner = board.getWinner();
+    updateWinMessage() {
+        const winner = this.#board.winner;
         if (winner === 1) {
             document.querySelector(".win-message.player1").hidden = false;
         } else if (winner === 2) {
@@ -153,23 +147,16 @@ const displayController = ((gameboard) => {
         }
     }
 
-    function reset() {
+    reset() {
         for (let i = 0 ; i < 3 ; i++) {
             for (let j = 0 ; j < 3 ; j++) {
-                updateSquare(i, j);
+                this.updateSquare(i, j);
             }
         }
         document.querySelector(".win-message.player1").hidden = true;
         document.querySelector(".win-message.player2").hidden = true;
     }
-
-    return {
-        updateSquare,
-        updateName,
-        updateWinMessage,
-        reset
-    }
-})(gameboard);
+}(gameBoard);
 
 const buttons = document.querySelectorAll(".grid > button");
 console.log(buttons);
